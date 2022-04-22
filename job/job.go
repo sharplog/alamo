@@ -1,7 +1,9 @@
 package job
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -70,9 +72,20 @@ func runCommand(job Job) (err error) {
 	}
 
 	log.Trace("Run command: ", job.Command)
-	return exec.Command(job.Command, args...).Run()
-}
 
-// TODO
-// 1. 非文件命令的执行
-// 2. 命令的输出
+	// 非文件命令的执行，加cmd /c
+	cmd := exec.Command(job.Command, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout // 标准输出
+	cmd.Stderr = &stderr // 错误输出
+
+	err = cmd.Run()
+	if stdout.Len() > 0 {
+		fmt.Print(string(stdout.Bytes()))
+	}
+	if stderr.Len() > 0 {
+		fmt.Fprintf(os.Stderr, string(stderr.Bytes()))
+	}
+
+	return
+}
