@@ -1,0 +1,24 @@
+# alano config example
+
+jobs:
+  backup1:
+    command: restic
+    pre_jobs:
+      - depjob1
+      # - depjob2
+    post_jobs:
+      - forget1
+    env_vars:
+      - RESTIC_PASSWORD: abc123
+    flags:
+      - --exclude: nwq*
+      - --tag: job_backup1
+      - --dumb: ~
+    arguments:
+      - backup
+      - d:\tmp\n.txt
+      - d:\tmp\man
+  depjob1:
+    command: restic
+    arguments:
+      - aaaa
