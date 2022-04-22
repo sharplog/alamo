@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Job struct {
@@ -32,6 +34,7 @@ func executeJob(name string) (err error) {
 		return errors.New("Job does't exist: " + name)
 	}
 
+	log.Trace("Execute job: ", name)
 	if err = ExecuteJobs(job.PreJobs); err != nil {
 		return
 	}
@@ -66,6 +69,7 @@ func runCommand(job Job) (err error) {
 		os.Setenv(k, v)
 	}
 
+	log.Trace("Run command: ", job.Command)
 	return exec.Command(job.Command, args...).Run()
 }
 

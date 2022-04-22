@@ -10,12 +10,15 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile  string
+	logLevel string
+)
 
 var rootCmd = &cobra.Command{
-	Use:   "alamo job",
+	Use:   "alamo [flags] job [job] ...",
 	Short: "Execute a job from configuration",
-	Long:  "See gitee.com/logsharp/alamo for documentation.",
+	Long:  "See https://gitee.com/logsharp/alamo for documentation.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("Requires at least one job")
@@ -34,14 +37,34 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Error(err)
+		// log.Error(err)
 		os.Exit(1)
 	}
 }
 
 func init() {
-	cobra.OnInitialize(loadCfg)
+	cobra.OnInitialize(initApp)
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "log level (fatal|error|warn|info|trace)")
+}
+
+func initApp() {
+	setLogLevel()
+	loadCfg()
+}
+
+func setLogLevel() {
+	logLevels := map[string]log.Level{
+		"fatal": log.FatalLevel,
+		"error": log.ErrorLevel,
+		"warn":  log.WarnLevel,
+		"info":  log.InfoLevel,
+		"trace": log.TraceLevel,
+	}
+
+	if level, ok := logLevels[logLevel]; ok {
+		log.SetLevel(level)
+	}
 }
 
 func loadCfg() {
