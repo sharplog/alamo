@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type Job struct {
@@ -20,6 +21,12 @@ type Job struct {
 }
 
 var Jobs map[string]Job
+
+func InitJobs(viper *viper.Viper) {
+	if err := viper.Sub("jobs").Unmarshal(&Jobs); err != nil {
+		log.Fatal("Load alamo config faild. ", err)
+	}
+}
 
 func ExecuteJobs(names []string) (err error) {
 	for _, name := range names {

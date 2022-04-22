@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"os"
 
 	"gitee.com/logsharp/alamo/job"
@@ -22,25 +21,21 @@ var rootCmd = &cobra.Command{
 	Long:  "See https://gitee.com/logsharp/alamo for documentation.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("Requires at least one job")
-		}
-		for _, name := range args {
-			if _, ok := job.Jobs[name]; !ok {
-				return errors.New("Job does't exist: " + name)
-			}
+			log.Error("Requires at least one job\n")
+			os.Exit(1)
 		}
 		return nil
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		return job.ExecuteJobs(args)
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := job.ExecuteJobs(args); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
 	},
 }
 
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		// log.Error(err)
-		os.Exit(1)
-	}
+	rootCmd.Execute()
 }
 
 func init() {
@@ -52,6 +47,7 @@ func init() {
 func initApp() {
 	mylog.InitLog(logLevel)
 	loadCfg()
+	job.InitJobs(viper.GetViper())
 }
 
 func loadCfg() {
@@ -70,9 +66,6 @@ func loadCfg() {
 		log.Fatal("Load alamo config faild. ", err)
 	} else {
 		log.Info("Using config file: ", viper.ConfigFileUsed())
-		if err := viper.Sub("jobs").Unmarshal(&job.Jobs); err != nil {
-			log.Fatal("Load alamo config faild. ", err)
-		}
 	}
 	return
 }
