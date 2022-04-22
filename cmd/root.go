@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gitee.com/logsharp/alamo/job"
+	mylog "gitee.com/logsharp/alamo/log"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -49,22 +50,8 @@ func init() {
 }
 
 func initApp() {
-	setLogLevel()
+	mylog.InitLog(logLevel)
 	loadCfg()
-}
-
-func setLogLevel() {
-	logLevels := map[string]log.Level{
-		"fatal": log.FatalLevel,
-		"error": log.ErrorLevel,
-		"warn":  log.WarnLevel,
-		"info":  log.InfoLevel,
-		"trace": log.TraceLevel,
-	}
-
-	if level, ok := logLevels[logLevel]; ok {
-		log.SetLevel(level)
-	}
 }
 
 func loadCfg() {
@@ -80,13 +67,11 @@ func loadCfg() {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Error("Load alamo config faild. ", err)
-		os.Exit(1)
+		log.Fatal("Load alamo config faild. ", err)
 	} else {
 		log.Info("Using config file: ", viper.ConfigFileUsed())
 		if err := viper.Sub("jobs").Unmarshal(&job.Jobs); err != nil {
-			log.Error("Load alamo config faild. ", err)
-			os.Exit(1)
+			log.Fatal("Load alamo config faild. ", err)
 		}
 	}
 	return
