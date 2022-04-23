@@ -25,7 +25,8 @@ Flags:
   -l, --log-level string   log level (fatal|error|warn|info|trace) (default "info")
 ```
 #### 配置文件
-Alamo需要一个作业配置文件，可以用--config来指定，否则，从当前路径（.)、home路径（$HOME/.alamo）和etc（/etc/alamo）下找alamo.yml文件。
+Alamo需要一个作业配置文件，可以用--config来指定，否则，从当前路径（.)、home路径（~/.alamo）和etc（/etc/alamo）下找alamo.yml文件。
+
 配置文件的示例如下：
 ```yml
 jobs:
