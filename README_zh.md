@@ -35,12 +35,12 @@ jobs:
       - backup1
   backup1:
     command: restic
-    env_vars:
+    env_vars: &pwd
       - RESTIC_PASSWORD: abc123
     flags:
       - --exclude: nwq*
       - --tag: job_backup1
-      - -r: d:\tmp\srv\repo1
+      - -r: &repo d:\tmp\srv\repo1
     arguments:
       - backup
       - d:\tmp\n.txt
@@ -51,18 +51,16 @@ jobs:
       - forget1
   depjob1:
     command: restic
-    env_vars:
-      - RESTIC_PASSWORD: abc123
+    env_vars: *pwd
     flags:
-      - -r: d:\tmp\srv\repo1
+      - -r: *repo
     arguments:
       - snapshots
   forget1:
     command: restic
-    env_vars:
-      - RESTIC_PASSWORD: abc123
+    env_vars: *pwd
     flags:
-      - -r: d:\tmp\srv\repo1
+      - -r: *repo
       - --keep-last: 5
       # - --tag: job_backup1
     arguments:
