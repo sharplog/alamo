@@ -5,6 +5,7 @@ import (
 
 	"gitee.com/logsharp/alamo/job"
 	mylog "gitee.com/logsharp/alamo/log"
+	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -56,10 +57,15 @@ func loadCfg() {
 	if len(cfgFile) > 0 {
 		viper.SetConfigFile(cfgFile) // set config file directly
 	} else {
-		viper.SetConfigName("alamo")
-		viper.AddConfigPath(".")            // ./alamo.yml
-		viper.AddConfigPath("$HOME/.alamo") // ~/.alamo/alamo.yml
-		viper.AddConfigPath("/etc/alamo")   // /etc/alamo/alamo.yml
+		viper.SetConfigName("alamo.yml")
+		viper.AddConfigPath(".") // ./alamo.yml
+		home, err := homedir.Expand("~/.alamo")
+		if err == nil {
+			viper.AddConfigPath(home)
+		}
+
+		// viper.AddConfigPath("$HOME/.alamo") // ~/.alamo/alamo.yml
+		viper.AddConfigPath("/etc/alamo") // /etc/alamo/alamo.yml
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
