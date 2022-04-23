@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -14,7 +15,7 @@ func (f *Formatter) Format(e *log.Entry) ([]byte, error) {
 	b := &bytes.Buffer{}
 	b.WriteString(e.Time.Format(time.RFC3339))
 	b.WriteByte(' ')
-	b.WriteString(e.Level.String())
+	b.WriteString(strings.ToUpper(e.Level.String()))
 	b.WriteByte(' ')
 	b.WriteString(e.Message)
 	b.WriteByte('\n')
