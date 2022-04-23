@@ -59,8 +59,7 @@ func loadCfg() {
 	} else {
 		viper.SetConfigName("alamo.yml")
 		viper.AddConfigPath(".") // ./alamo.yml
-		home, err := homedir.Expand("~/.alamo")
-		if err == nil {
+		if home, err := homedir.Expand("~/.alamo"); err == nil {
 			viper.AddConfigPath(home)
 		}
 
