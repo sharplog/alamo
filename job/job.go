@@ -48,8 +48,10 @@ func executeJob(name string) (err error) {
 		return
 	}
 
-	if err = runCommand(job); err != nil {
-		return
+	if len(job.Command) > 0 {
+		if err = runCommand(job); err != nil {
+			return
+		}
 	}
 
 	if err = ExecuteJobs(job.PostJobs); err != nil {
@@ -80,11 +82,10 @@ func runCommand(job Job) (err error) {
 
 	log.Trace("Run command: ", job.Command)
 
-	// 非文件命令的执行，加cmd /c
 	cmd := exec.Command(job.Command, args...)
 	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout // 标准输出
-	cmd.Stderr = &stderr // 错误输出
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	err = cmd.Run()
 	if stdout.Len() > 0 {
