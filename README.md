@@ -25,7 +25,7 @@ Flags:
   -l, --log-level string   log level (fatal|error|warn|info|trace) (default "info")
 ```
 #### Configuration
-Alamo needs a configuration file which can be specified by *--config*. By default, alamo looks for alamo.yml from current directory(.), home path(~/.), and etc(/etc/alamo)
+Alamo needs a configuration file which can be specified by *--config*. By default, alamo looks for alamo.yml from current directory(.), home path(~/.), and etc(/etc/alamo).
 
 One sample of configuration：
 ```yml
