@@ -20,6 +20,7 @@ jobs:
       - depjob1
     post_jobs:
       - forget1
+    fail_jobs:
   depjob1:
     command: restic
     env_vars: *pwd

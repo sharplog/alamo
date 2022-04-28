@@ -12,9 +12,17 @@ import (
 )
 
 type Job struct {
-	Command   string
-	PreJobs   []string          `mapstructure:"pre_jobs"`
-	PostJobs  []string          `mapstructure:"post_jobs"`
+	Command string
+
+	// jobs that this job is dependent upon
+	PreJobs []string `mapstructure:"pre_jobs"`
+
+	// jobs executed after this job successful
+	PostJobs []string `mapstructure:"post_jobs"`
+
+	// jobs executed after this job failed
+	FailJobs []string `mapstructure:"fail_jobs"`
+
 	EnvVars   map[string]string `mapstructure:"env_vars"`
 	Flags     map[string]string
 	Arguments []string
@@ -50,6 +58,7 @@ func executeJob(name string) (err error) {
 
 	if len(job.Command) > 0 {
 		if err = runCommand(job); err != nil {
+			ExecuteJobs(job.FailJobs)
 			return
 		}
 	}
