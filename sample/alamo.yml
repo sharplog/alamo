@@ -15,12 +15,16 @@ jobs:
     arguments:
       - backup
       - d:\tmp\n.txt
-      - d:\tmp\man
+      - man
     pre_jobs:
       - depjob1
     post_jobs:
       - forget1
     fail_jobs:
+    work_dir: d:\tmp
+    stdin: in.txt
+    stdout: out.txt
+    stderr: err.txt
   depjob1:
     command: restic
     env_vars: *pwd
