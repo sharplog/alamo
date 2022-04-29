@@ -3,11 +3,14 @@
 ### Intro
 A tool to execute job according to configuration. Config items include:
 - Command
-- Environment variables
-- Flags
 - Arguments
+- Flags
+- Environment variables
+- Work directory
 - Prepositive jobs(dependencies)
 - Post-processing jobs
+- Post-failing jobs
+- Redirection of stdin, stdout and stderr
 
 ### Usage
 #### Execute jobs
@@ -49,6 +52,11 @@ jobs:
       - depjob1
     post_jobs:
       - forget1
+    fail_jobs:
+    work_dir: d:\tmp
+    stdin: in.txt
+    stdout: out.txt
+    stderr: err.txt
   depjob1:
     command: restic
     env_vars: *pwd

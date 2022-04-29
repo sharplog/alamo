@@ -3,11 +3,14 @@
 ### 介绍
 按照配置文件执行作业，可以设置作业的：
 - 执行命令
-- 所需要的环境变量
-- flags
 - 参数
+- flags
+- 所需要的环境变量
+- 工作目录
 - 前置作业，本作业需要依赖的其他作业
 - 后置作业，本作业执行后的事后处理
+- 失败后作业，在本作业执行失败后执行
+- 标准输入、标准输出和错误输出的重定向
 
 ### 使用说明
 #### 运行作业
@@ -49,6 +52,11 @@ jobs:
       - depjob1
     post_jobs:
       - forget1
+    fail_jobs:
+    work_dir: d:\tmp
+    stdin: in.txt
+    stdout: out.txt
+    stderr: err.txt
   depjob1:
     command: restic
     env_vars: *pwd
