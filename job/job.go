@@ -4,6 +4,9 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -25,6 +28,9 @@ type Job struct {
 	Flags     map[string]string
 	Arguments []string
 	WorkDir   string `mapstructure:"work_dir"`
+	Stdin     string
+	Stdout    string
+	Stderr    string
 }
 
 var Jobs map[string]Job
@@ -100,6 +106,27 @@ func runCommand(job Job) (err error) {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
+	if outf, err := getIOFile(job.Stdout, job.WorkDir, true); err != nil {
+		return err
+	} else if outf != nil {
+		defer outf.Close()
+		cmd.Stdout = outf
+	}
+
+	if errf, err := getIOFile(job.Stderr, job.WorkDir, true); err != nil {
+		return err
+	} else if errf != nil {
+		defer errf.Close()
+		cmd.Stderr = errf
+	}
+
+	if inf, err := getIOFile(job.Stdin, job.WorkDir, false); err != nil {
+		return err
+	} else if inf != nil {
+		defer inf.Close()
+		cmd.Stdin = inf
+	}
+
 	if err = cmd.Start(); err != nil {
 		return
 	}
@@ -107,4 +134,30 @@ func runCommand(job Job) (err error) {
 	log.Trace("Command finished: ", job.Command)
 
 	return
+}
+
+func getIOFile(file string, workDir string, isOut bool) (io *os.File, err error) {
+	if len(file) == 0 {
+		return nil, nil
+	}
+
+	if len(workDir) > 0 && !isAbsPath(file) {
+		if !strings.HasSuffix(workDir, string(os.PathSeparator)) {
+			workDir += string(os.PathSeparator)
+		}
+		file = workDir + file
+	}
+
+	if isOut {
+		return os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	} else {
+		return os.Open(file)
+	}
+}
+
+func isAbsPath(path string) bool {
+	// Add paths starting with '\' or '/' on windows system
+	return filepath.IsAbs(path) ||
+		(runtime.GOOS == "windows" &&
+			(strings.HasPrefix(path, "\\") || strings.HasPrefix(path, "/")))
 }
