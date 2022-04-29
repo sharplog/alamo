@@ -84,11 +84,15 @@ func (job *Job) runCommand() (err error) {
 		cmd.Stdout = outf
 	}
 
-	if errf, err := job.getIOFile(job.Stderr, true); err != nil {
-		return err
-	} else if errf != nil {
-		defer errf.Close()
-		cmd.Stderr = errf
+	if len(job.Stderr) > 0 && job.Stdout == job.Stderr {
+		cmd.Stderr = cmd.Stdout
+	} else {
+		if errf, err := job.getIOFile(job.Stderr, true); err != nil {
+			return err
+		} else if errf != nil {
+			defer errf.Close()
+			cmd.Stderr = errf
+		}
 	}
 
 	if inf, err := job.getIOFile(job.Stdin, false); err != nil {
