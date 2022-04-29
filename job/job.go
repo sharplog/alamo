@@ -1,9 +1,7 @@
 package job
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -26,6 +24,7 @@ type Job struct {
 	EnvVars   map[string]string `mapstructure:"env_vars"`
 	Flags     map[string]string
 	Arguments []string
+	WorkDir   string `mapstructure:"work_dir"`
 }
 
 var Jobs map[string]Job
@@ -67,6 +66,7 @@ func executeJob(name string) (err error) {
 		return
 	}
 
+	log.Trace("Job finished: ", name)
 	return
 }
 
@@ -90,19 +90,21 @@ func runCommand(job Job) (err error) {
 	}
 
 	log.Trace("Run command: ", job.Command)
-
 	cmd := exec.Command(job.Command, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
 
-	err = cmd.Run()
-	if stdout.Len() > 0 {
-		fmt.Print(string(stdout.Bytes()))
+	if len(job.WorkDir) > 0 {
+		cmd.Dir = job.WorkDir
 	}
-	if stderr.Len() > 0 {
-		fmt.Fprintf(os.Stderr, string(stderr.Bytes()))
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	if err = cmd.Start(); err != nil {
+		return
 	}
+	err = cmd.Wait()
+	log.Trace("Command finished: ", job.Command)
 
 	return
 }
