@@ -23,7 +23,7 @@ func (f *Formatter) Format(e *log.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func InitLog(level string) {
+func Init(level string) {
 	logLevels := map[string]log.Level{
 		"fatal": log.FatalLevel,
 		"error": log.ErrorLevel,

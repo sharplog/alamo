@@ -1,7 +1,6 @@
 package job
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,74 +8,46 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type Job struct {
-	Command string
-
-	// jobs that this job is dependent upon
-	PreJobs []string `mapstructure:"pre_jobs"`
-
-	// jobs executed after this job successful
-	PostJobs []string `mapstructure:"post_jobs"`
-
-	// jobs executed after this job failed
-	FailJobs []string `mapstructure:"fail_jobs"`
-
-	EnvVars   map[string]string `mapstructure:"env_vars"`
-	Flags     map[string]string
+	Name      string
+	Command   string
 	Arguments []string
-	WorkDir   string `mapstructure:"work_dir"`
+	Flags     map[string]string
+	EnvVars   map[string]string `mapstructure:"env_vars"`
+	WorkDir   string            `mapstructure:"work_dir"`
 	Stdin     string
 	Stdout    string
 	Stderr    string
+
+	PreJobs  []string `mapstructure:"pre_jobs"`  // dependent jobs
+	PostJobs []string `mapstructure:"post_jobs"` // executed when successful
+	FailJobs []string `mapstructure:"fail_jobs"` // executed when failed
 }
 
-var Jobs map[string]Job
-
-func InitJobs(viper *viper.Viper) {
-	if err := viper.Sub("jobs").Unmarshal(&Jobs); err != nil {
-		log.Fatal("Load alamo config faild. ", err)
-	}
-}
-
-func ExecuteJobs(names []string) (err error) {
-	for _, name := range names {
-		if err = executeJob(name); err != nil {
-			return
-		}
-	}
-	return
-}
-
-func executeJob(name string) (err error) {
-	job, ok := Jobs[name]
-	if !ok {
-		return errors.New("Job does't exist: " + name)
-	}
-
-	log.Trace("Execute job: ", name)
-	if err = ExecuteJobs(job.PreJobs); err != nil {
+func (job *Job) Execute(jobs *Jobs) (err error) {
+	log.Trace("Execute job: ", job.Name)
+	if err = jobs.ExecuteJobs(job.PreJobs); err != nil {
 		return
 	}
 
 	if len(job.Command) > 0 {
-		if err = runCommand(job); err != nil {
-			ExecuteJobs(job.FailJobs)
+		if err = job.runCommand(); err != nil {
+			jobs.ExecuteJobs(job.FailJobs)
 			return
 		}
 	}
 
-	if err = ExecuteJobs(job.PostJobs); err != nil {
+	if err = jobs.ExecuteJobs(job.PostJobs); err != nil {
 		return
 	}
 
-	log.Trace("Job finished: ", name)
+	log.Trace("Job finished: ", job.Name)
 	return
 }
 
-func runCommand(job Job) (err error) {
+func (job *Job) runCommand() (err error) {
 	var args []string
 
 	for k, v := range job.Flags {
@@ -106,21 +77,21 @@ func runCommand(job Job) (err error) {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	if outf, err := getIOFile(job.Stdout, job.WorkDir, true); err != nil {
+	if outf, err := job.getIOFile(job.Stdout, true); err != nil {
 		return err
 	} else if outf != nil {
 		defer outf.Close()
 		cmd.Stdout = outf
 	}
 
-	if errf, err := getIOFile(job.Stderr, job.WorkDir, true); err != nil {
+	if errf, err := job.getIOFile(job.Stderr, true); err != nil {
 		return err
 	} else if errf != nil {
 		defer errf.Close()
 		cmd.Stderr = errf
 	}
 
-	if inf, err := getIOFile(job.Stdin, job.WorkDir, false); err != nil {
+	if inf, err := job.getIOFile(job.Stdin, false); err != nil {
 		return err
 	} else if inf != nil {
 		defer inf.Close()
@@ -136,11 +107,12 @@ func runCommand(job Job) (err error) {
 	return
 }
 
-func getIOFile(file string, workDir string, isOut bool) (io *os.File, err error) {
+func (job *Job) getIOFile(file string, isOut bool) (io *os.File, err error) {
 	if len(file) == 0 {
 		return nil, nil
 	}
 
+	workDir := job.WorkDir
 	if len(workDir) > 0 && !isAbsPath(file) {
 		if !strings.HasSuffix(workDir, string(os.PathSeparator)) {
 			workDir += string(os.PathSeparator)

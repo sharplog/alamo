@@ -14,6 +14,7 @@ import (
 var (
 	cfgFile  string
 	logLevel string
+	jobs     job.Jobs
 )
 
 var rootCmd = &cobra.Command{
@@ -28,7 +29,7 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := job.ExecuteJobs(args); err != nil {
+		if err := jobs.ExecuteJobs(args); err != nil {
 			log.Error(err)
 			os.Exit(1)
 		}
@@ -46,9 +47,9 @@ func init() {
 }
 
 func initApp() {
-	mylog.InitLog(logLevel)
+	mylog.Init(logLevel)
 	loadCfg()
-	job.InitJobs(viper.GetViper())
+	jobs.Init(viper.GetViper())
 }
 
 func loadCfg() {
