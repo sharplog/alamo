@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -17,6 +18,7 @@ type Job struct {
 	Flags     map[string]string
 	EnvVars   map[string]string `mapstructure:"env_vars"`
 	WorkDir   string            `mapstructure:"work_dir"`
+	Platform  string
 	Stdin     string
 	Stdout    string
 	Stderr    string
@@ -34,6 +36,7 @@ func (job *Job) Execute(jobs *Jobs) (err error) {
 
 	if len(job.Command) > 0 {
 		if err = job.runCommand(); err != nil {
+			log.Error("Run command " + job.Command + " failed. " + err.Error())
 			jobs.ExecuteJobs(job.FailJobs)
 			return
 		}
@@ -48,6 +51,20 @@ func (job *Job) Execute(jobs *Jobs) (err error) {
 }
 
 func (job *Job) runCommand() (err error) {
+	if job.Platform != "" {
+		platform := job.Platform
+		shouldNot := strings.HasPrefix(job.Platform, "^")
+		if shouldNot {
+			platform = platform[1:]
+		}
+
+		match, _ := regexp.MatchString(platform, runtime.GOOS)
+		if !match && !shouldNot || match && shouldNot {
+			log.Info("Not run command " + job.Command + " because the platform is " + runtime.GOOS)
+			return
+		}
+	}
+
 	var args []string
 
 	for k, v := range job.Flags {
@@ -58,9 +75,7 @@ func (job *Job) runCommand() (err error) {
 		}
 	}
 
-	for _, v := range job.Arguments {
-		args = append(args, v)
-	}
+	args = append(args, job.Arguments...)
 
 	for k, v := range job.EnvVars {
 		os.Setenv(k, v)
