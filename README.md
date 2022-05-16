@@ -11,6 +11,7 @@ A tool to execute job according to configuration. Config items include:
 - Post-processing jobs
 - Post-failing jobs
 - Redirection of stdin, stdout and stderr
+- Dependent platform, starting with ^ means not matched
 
 ### Usage
 #### Execute jobs
@@ -32,45 +33,80 @@ Alamo needs a configuration file which can be specified by *--config*. By defaul
 
 One sample of configuration：
 ```yml
+# alamo config example
+
 jobs:
-  all:
-    pre_jobs:
-      - backup1
-  backup1:
+  backup:
     command: restic
     env_vars: &pwd
       - RESTIC_PASSWORD: abc123
     flags:
       - --exclude: nwq*
-      - --tag: job_backup1
+      - --tag: job_backup
       - -r: &repo d:\tmp\srv\repo1
     arguments:
       - backup
-      - d:\tmp\n.txt
-      - d:\tmp\man
+      - d:\tmp\alamo.gz
     pre_jobs:
-      - depjob1
+      - compress
     post_jobs:
-      - forget1
+      - forget
+      - rm1
+      - rm2
     fail_jobs:
     work_dir: d:\tmp
     stdin: in.txt
     stdout: out.txt
     stderr: err.txt
-  depjob1:
+  backup:
     command: restic
-    env_vars: *pwd
+    env_vars: &pwd
+      - RESTIC_PASSWORD: abc123
     flags:
-      - -r: *repo
+      - --exclude: nwq*
+      - --tag: job_backup
+      - -r: &repo d:\tmp\srv\repo1
     arguments:
-      - snapshots
-  forget1:
+      - backup
+      - d:\tmp\alamo.gz
+    pre_jobs:
+      - compress
+    post_jobs:
+      - forget
+      - rm_w
+      - rm_x
+    fail_jobs:
+    work_dir: d:\tmp
+    stdin: in.txt
+    stdout: out.txt
+    stderr: err.txt
+  compress:
+    command: 7z
+    arguments:
+      - a
+      - alamo
+      - alamo.txt
+      - -tgzip
+    work_dir: d:\tmp
+  forget:
     command: restic
     env_vars: *pwd
     flags:
       - -r: *repo
       - --keep-last: 5
-      # - --tag: job_backup1
+      - --tag: job_backup
     arguments:
       - forget
+  rm_w:
+    command: cmd
+    platform: windows   # regexp matched platform
+    arguments: 
+      - /C
+      - del alamo.gz
+    work_dir: d:\tmp
+  rm_x:
+    command: rm
+    platform: ^windows   # regexp not matched platform
+    arguments: alamo.gz
+    work_dir: /tmp
 ```
